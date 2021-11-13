@@ -501,6 +501,11 @@ namespace System.Threading
             return new ThreadPoolBoundHandle(handle, threadPoolHandle);
         }
 
+
+        [CLSCompliant(false)]
+        public unsafe NativeOverlapped* UnsafeAllocateNativeOverlapped(IOCompletionCallback callback, object state, object? pinData) =>
+            AllocateNativeOverlapped(callback, state, pinData);
+
         [CLSCompliant(false)]
         public unsafe NativeOverlapped* AllocateNativeOverlapped(IOCompletionCallback callback, object state, object? pinData)
         {
@@ -873,7 +878,7 @@ namespace System.Threading
                 s_executionContextCallback = callback = OnExecutionContextCallback;
 #pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
 
-                // Get an args object from the per-thread cache.
+            // Get an args object from the per-thread cache.
             ExecutionContextCallbackArgs args = t_executionContextCallbackArgs;
             if (args == null)
                 args = new ExecutionContextCallbackArgs();
