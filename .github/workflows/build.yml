@@ -11,7 +11,8 @@ jobs:
         run: |
           ./eng/build.ps1 mono+libs -c Release -a x64 -runtimeFlavor mono
       - uses: actions/upload-artifact@v2
-        name: mono-dotnet
-        path: |
-          artifacts/bin/mono/
-          artifacts/bin/runtime/
+        with:
+          name: mono-dotnet
+          path: |
+            artifacts/bin/mono/
+            artifacts/bin/runtime/
