@@ -1,0 +1,17 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2.3.5
+      - name: Build
+        run: |
+          ./eng/build.ps1 mono+libs -c Release -a x64 -runtimeFlavor mono
+      - uses: actions/upload-artifact@v2
+        name: mono-dotnet
+        path: |
+          artifacts/bin/mono/
+          artifacts/bin/runtime/
