@@ -43,6 +43,8 @@ jobs:
                 break;
             }
 
+            core.setOutput("build-date", new Date().toISOString().split('T')[0].replace(/-/g, ''));
+
       - uses: actions/checkout@v3
       - if: matrix.os == 'ubuntu-latest'
         name: Install linux dependencies
@@ -55,12 +57,12 @@ jobs:
           sudo apt install -y debootstrap qemu-user-static qemu clang-9 libclang-9-dev llvm-9-dev
           . /etc/os-release
           sudo ./eng/common/cross/build-rootfs.sh x86 $VERSION_CODENAME
-          ROOTFS_DIR=`pwd`/.tools/rootfs/x86 ./build.sh clr.runtime+clr.corelib+libs --cross --clang9 --arch x86 -c ${{ matrix.configuration }}
+          ROOTFS_DIR=`pwd`/.tools/rootfs/x86 ./build.sh clr.runtime+clr.corelib+libs --cross --clang9 --arch x86 -c ${{ matrix.configuration }} /p:OfficialBuildId=${{ steps.set-vars.build-date }}.0
       - name: Build
         if: matrix.os != 'ubuntu-latest' || matrix.arch != 'x86'
         shell: bash
         run: |
-          ./build.sh clr.runtime+clr.corelib+libs -c ${{ matrix.configuration }} -a ${{ matrix.arch }}
+          ./build.sh clr.runtime+clr.corelib+libs -c ${{ matrix.configuration }} -a ${{ matrix.arch }} /p:OfficialBuildId=${{ steps.set-vars.build-date }}.0
       - name: Collect final build
         shell: bash
         run: |
@@ -71,7 +73,7 @@ jobs:
           cp artifacts/bin/runtime/net*-${{ steps.set-vars.outputs.os-name }}-${{ matrix.configuration }}-${{ matrix.arch }}/*.{dll,${{ steps.set-vars.outputs.extension }}} artifacts/ci/${{ steps.set-vars.outputs.rid }}/corlib/
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ steps.set-vars.outputs.rid }} ${{ matrix.configuration }}
+          name: ${{ steps.set-vars.outputs.rid }}-${{ matrix.configuration }}
           path: |
             artifacts/ci/${{ steps.set-vars.outputs.rid }}
       - uses: actions/upload-artifact@v3
@@ -79,3 +81,28 @@ jobs:
           name: mini-coreclr-${{ matrix.configuration }}
           path: |
             artifacts/ci/
+
+  create_release:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: Collect files
+        id: collect-info
+        run: |
+          mkdir release
+          find artifacts -name "*.zip" -exec mv {} release \;
+          echo "::set-output name=release_tag::$(date +%Y%m%d).$GITHUB_RUN_NUMBER"
+      - name: Create release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ steps.collect-info.outputs.release_tag }}
+          title: "Build ${{ steps.collect-info.outputs.release_tag }}"
+          files: |
+            release/*.zip
