@@ -1,0 +1,81 @@
+name: Build CoreCLR
+
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [x64, x86]
+        configuration: [Release, Debug]
+        exclude:
+          - os: macos-latest
+            arch: x86
+    steps:
+      - id: set-vars
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const os = "${{ matrix.os }}";
+            const arch = "${{ matrix.arch }}";
+            const configuration = "${{ matrix.configuration }}";
+
+            switch (os) {
+              case "ubuntu-latest":
+                core.setOutput("extension", "so");
+                core.setOutput("os-name", "Linux");
+                core.setOutput("rid", "linux-" + arch);
+                break;
+
+              case "windows-latest":
+                core.setOutput("extension", "dll");
+                core.setOutput("os-name", "windows");
+                core.setOutput("rid", "windows-" + arch);
+                break;
+
+              case "macos-latest":
+                core.setOutput("extension", "dylib");
+                core.setOutput("os-name", "OSX");
+                core.setOutput("rid", "macos-" + arch);
+                break;
+            }
+
+      - uses: actions/checkout@v3
+      - if: matrix.os == 'ubuntu-latest'
+        name: Install linux dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libkrb5-dev liblttng-ust-dev
+      - if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x86'
+        name: Build 32bit linux
+        run: |
+          sudo apt install -y debootstrap qemu-user-static qemu clang-9 libclang-9-dev llvm-9-dev
+          . /etc/os-release
+          sudo ./eng/common/cross/build-rootfs.sh x86 $VERSION_CODENAME
+          ROOTFS_DIR=`pwd`/.tools/rootfs/x86 ./build.sh clr.runtime+clr.corelib+libs --cross --clang9 --arch x86 -c ${{ matrix.configuration }}
+      - name: Build
+        if: matrix.os != 'ubuntu-latest' || matrix.arch != 'x86'
+        shell: bash
+        run: |
+          ./build.sh clr.runtime+clr.corelib+libs -c ${{ matrix.configuration }} -a ${{ matrix.arch }}
+      - name: Collect final build
+        shell: bash
+        run: |
+          mkdir -p artifacts/ci/${{ steps.set-vars.outputs.rid }}
+          cp artifacts/bin/coreclr/${{ steps.set-vars.outputs.os-name }}.${{ matrix.arch }}.${{ matrix.configuration }}/${{ matrix.os != 'windows-latest' && 'lib{' || '{clretwrc,mscorrc,' }}clrgc,clrjit,coreclr,dbgshim,jitinterface_${{ matrix.arch }},mscordaccore,mscordbi}.${{ steps.set-vars.outputs.extension }} artifacts/ci/${{ steps.set-vars.outputs.rid }}/
+          cp artifacts/bin/coreclr/${{ steps.set-vars.outputs.os-name }}.${{ matrix.arch }}.${{ matrix.configuration }}/IL/System.Private.CoreLib.dll artifacts/ci/${{ steps.set-vars.outputs.rid }}/
+          mkdir -p artifacts/ci/${{ steps.set-vars.outputs.rid }}/corlib
+          cp artifacts/bin/runtime/net*-${{ steps.set-vars.outputs.os-name }}-${{ matrix.configuration }}-${{ matrix.arch }}/*.{dll,${{ steps.set-vars.outputs.extension }}} artifacts/ci/${{ steps.set-vars.outputs.rid }}/corlib/
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.set-vars.outputs.rid }} ${{ matrix.configuration }}
+          path: |
+            artifacts/ci/${{ steps.set-vars.outputs.rid }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: mini-coreclr ${{ matrix.configuration }}
+          path: |
+            artifacts/ci/
