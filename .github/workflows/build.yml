@@ -28,6 +28,7 @@ jobs:
                 core.setOutput("extension", "so");
                 core.setOutput("os-name", "Linux");
                 core.setOutput("rid", "linux-" + arch);
+                core.setOutput("build-cmd", "./build.sh");
                 break;
 
               case "windows-latest":
