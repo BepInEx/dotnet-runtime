@@ -98,7 +98,8 @@ jobs:
         id: collect-info
         run: |
           mkdir release
-          find artifacts -name "*.zip" -exec mv {} release \;
+          cd artifacts
+          for i in */; do (cd "${i%/}" && zip -0 -r "../../release/${i%/}.zip" *) & done; wait
           echo "::set-output name=release_tag::$(date +%Y%m%d).$GITHUB_RUN_NUMBER"
       - name: Create release
         uses: marvinpinto/action-automatic-releases@latest
