@@ -62,7 +62,7 @@ jobs:
         if: matrix.os != 'ubuntu-latest' || matrix.arch != 'x86'
         shell: bash
         run: |
-          ./build.sh clr.runtime+clr.corelib+libs -c ${{ matrix.configuration }} -a ${{ matrix.arch }} /p:OfficialBuildId=${{ steps.set-vars.outputs.build-date }}.0
+          ./build.sh clr.runtime+clr.corelib+libs -c ${{ matrix.configuration }} -a ${{ matrix.arch }} \/p:OfficialBuildId=${{ steps.set-vars.outputs.build-date }}.0
       - name: Collect final build
         shell: bash
         run: |
