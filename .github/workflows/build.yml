@@ -57,7 +57,7 @@ jobs:
           sudo apt install -y debootstrap qemu-user-static qemu clang-9 libclang-9-dev llvm-9-dev
           . /etc/os-release
           sudo ./eng/common/cross/build-rootfs.sh x86 $VERSION_CODENAME
-          ROOTFS_DIR=`pwd`/.tools/rootfs/x86 ./build.sh clr.runtime+clr.corelib+libs --cross --clang9 --arch x86 -c ${{ matrix.configuration }} /p:OfficialBuildId=${{ steps.set-vars.outputs.build-date }}.0
+          ROOTFS_DIR=`pwd`/.tools/rootfs/x86 ./build.sh clr.runtime+clr.corelib+libs --cross --clang9 --arch x86 -c ${{ matrix.configuration }} //p:OfficialBuildId=${{ steps.set-vars.outputs.build-date }}.0
       - name: Build
         if: matrix.os != 'ubuntu-latest' || matrix.arch != 'x86'
         shell: bash
