@@ -71,8 +71,7 @@ jobs:
           mkdir -p artifacts/ci/${{ steps.set-vars.outputs.rid }}
           cp artifacts/bin/coreclr/${{ steps.set-vars.outputs.os-name }}.${{ matrix.arch }}.${{ matrix.configuration }}/${{ matrix.os != 'windows-latest' && 'lib{' || '{clretwrc,mscorrc,' }}clrgc,clrjit,coreclr,jitinterface_${{ matrix.arch }},mscordaccore,mscordbi}.${{ steps.set-vars.outputs.extension }} artifacts/ci/${{ steps.set-vars.outputs.rid }}/
           cp artifacts/bin/coreclr/${{ steps.set-vars.outputs.os-name }}.${{ matrix.arch }}.${{ matrix.configuration }}/IL/System.Private.CoreLib.dll artifacts/ci/${{ steps.set-vars.outputs.rid }}/
-          mkdir -p artifacts/ci/${{ steps.set-vars.outputs.rid }}/corlib
-          cp artifacts/bin/runtime/net*-${{ steps.set-vars.outputs.os-name }}-${{ matrix.configuration }}-${{ matrix.arch }}/*.{dll,${{ steps.set-vars.outputs.extension }}} artifacts/ci/${{ steps.set-vars.outputs.rid }}/corlib/
+          cp artifacts/bin/runtime/net*-${{ steps.set-vars.outputs.os-name }}-${{ matrix.configuration }}-${{ matrix.arch }}/*.{dll,${{ steps.set-vars.outputs.extension }}} artifacts/ci/${{ steps.set-vars.outputs.rid }}/
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.set-vars.outputs.rid }}-${{ matrix.configuration }}
